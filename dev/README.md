@@ -27,6 +27,9 @@ Production installs use the default-enabled optimizations. These switches suppor
 | `view_config` | Reuse of theme/area view XML as PHP data. | Yes |
 | `guest_tax_factor` | Reuse of guest tax-factor calculations. | Yes |
 | `placeholder_url` | Cached placeholder URLs, including theme and transport identity. | Yes |
+| `tax_rates` | Tax rates and applied rates per rate request from the cache. | Yes |
+| `customer_groups` | Customer groups by id from the cache, with their excluded websites. | Yes |
+| `currency_rates` | Currency rates from the cache; a rate import cleans them. | Yes |
 
 These switches do not enable PHP class preload; that requires `opcache.preload` at FPM startup.
 

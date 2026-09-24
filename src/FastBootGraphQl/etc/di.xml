@@ -40,18 +40,6 @@
     <type name="Magento\CustomerGraphQl\CacheIdFactorProviders\CustomerTaxRateProvider">
         <plugin name="graphcommerce_fastboot_guest_tax_factor" type="GraphCommerce\FastBootGraphQl\Plugin\CacheId\GuestTaxFactor"/>
     </type>
-    <type name="Magento\Tax\Model\ResourceModel\Calculation\Rate">
-        <plugin name="graphcommerce_fastboot_forget_tax_factors" type="GraphCommerce\FastBootGraphQl\Plugin\Tax\ForgetTaxFactors"/>
-    </type>
-    <type name="Magento\Tax\Model\ResourceModel\Calculation\Rule">
-        <plugin name="graphcommerce_fastboot_forget_tax_factors" type="GraphCommerce\FastBootGraphQl\Plugin\Tax\ForgetTaxFactors"/>
-    </type>
-    <type name="Magento\Tax\Model\ResourceModel\TaxClass">
-        <plugin name="graphcommerce_fastboot_forget_tax_factors" type="GraphCommerce\FastBootGraphQl\Plugin\Tax\ForgetTaxFactors"/>
-    </type>
-    <type name="Magento\Customer\Model\ResourceModel\Group">
-        <plugin name="graphcommerce_fastboot_forget_tax_factors" type="GraphCommerce\FastBootGraphQl\Plugin\Tax\ForgetTaxFactors"/>
-    </type>
 
     <!-- The placeholder image URL per store and image type from the cache. -->
     <type name="Magento\CatalogGraphQl\Model\Resolver\Products\DataProvider\Image\Placeholder">

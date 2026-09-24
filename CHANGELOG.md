@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Tax rates, customer groups and currency rates as cache entries in the local files: no select per request for them. A tax rule, rate, class or group save cleans the tax entries; a rate import cleans the currency entries.
+- A process keeps the entries it read in memory until they expire; a worker answers them without the include.
+
 ## 0.2.0-rc6
 
 - Read the di.xml files through the runtime loader of Magento when the installation has no compiled metadata, so a developer-mode install serves requests.
