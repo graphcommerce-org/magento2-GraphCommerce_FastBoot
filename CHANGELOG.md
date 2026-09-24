@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-rc7
 
 - Tax rates, customer groups and currency rates as cache entries in the local files: no select per request for them. A tax rule, rate, class or group save cleans the tax entries; a rate import cleans the currency entries.
 - A process keeps the entries it read in memory until they expire; a worker answers them without the include.
