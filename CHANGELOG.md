@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0-rc7
 
 - Promote entries that Mage-OS stores through its compression decorator to the local files; the lifetime rule reads the packed record as the frontend answers it.
 
