@@ -11,4 +11,5 @@ final class Tag
 {
     public const TAX = 'FASTBOOT_TAX';
     public const CURRENCY = 'FASTBOOT_CURRENCY';
+    public const STOCK = 'FASTBOOT_STOCK';
 }

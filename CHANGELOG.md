@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The stock id of the current website as a cache entry in the local files, from the new FastBootInventory module: no sales channel select per request. A change of a stock's sales channels cleans it.
+
 ## 0.2.0-rc8
 
 - Tax rates, customer groups and currency rates as cache entries in the local files: no select per request for them. A tax rule, rate, class or group save cleans the tax entries; a rate import cleans the currency entries.

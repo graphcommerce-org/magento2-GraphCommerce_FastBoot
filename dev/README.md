@@ -30,6 +30,7 @@ Production installs use the default-enabled optimizations. These switches suppor
 | `tax_rates` | Tax rates and applied rates per rate request from the cache, for requests that are not customer-specific. | Yes |
 | `customer_groups` | Customer groups by id from the cache, with their excluded websites. | Yes |
 | `currency_rates` | Currency rates from the cache; a rate import cleans them. | Yes |
+| `stock_id` | The stock id of the current website from the cache; a change of a stock's sales channels cleans it. | Yes |
 
 These switches do not enable PHP class preload; that requires `opcache.preload` at FPM startup.
 

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="GraphCommerce\FastBootCache\Plugin\OpcacheDefaultLayer">
+        <arguments>
+            <argument name="ids" xsi:type="array">
+                <item name="stock_ids" xsi:type="string">FASTBOOT_STOCK_ID_</item>
+            </argument>
+            <argument name="tags" xsi:type="array">
+                <item name="stock" xsi:type="const">GraphCommerce\FastBootCache\Model\Tag::STOCK</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <!-- The stock id of the current website from the cache; a change of a stock's sales channels cleans it. -->
+    <type name="Magento\InventoryCatalog\Model\GetStockIdForCurrentWebsite">
+        <plugin name="graphcommerce_fastboot_stock_id" type="GraphCommerce\FastBootInventory\Plugin\StockIdFromCache"/>
+    </type>
+    <type name="Magento\InventorySales\Model\ResourceModel\ReplaceSalesChannelsDataForStock">
+        <plugin name="graphcommerce_fastboot_forget_stock_ids" type="GraphCommerce\FastBootInventory\Plugin\ForgetStockIds"/>
+    </type>
+    <type name="Magento\InventorySales\Model\ResourceModel\DeleteSalesChannelToStockLink">
+        <plugin name="graphcommerce_fastboot_forget_stock_ids" type="GraphCommerce\FastBootInventory\Plugin\ForgetStockIds"/>
+    </type>
+    <type name="Magento\InventorySales\Model\ResourceModel\UpdateSalesChannelWebsiteCode">
+        <plugin name="graphcommerce_fastboot_forget_stock_ids" type="GraphCommerce\FastBootInventory\Plugin\ForgetStockIds"/>
+    </type>
+</config>

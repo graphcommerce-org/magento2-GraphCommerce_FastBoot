@@ -11,6 +11,7 @@ composer require graphcommerce/magento-fast-boot
 | FastBoot | [Installation and deployment](src/FastBoot/README.md) |
 | FastBootCache | [Cache configuration and behavior](src/FastBootCache/README.md) |
 | FastBootGraphQl | [GraphQL optimizations](src/FastBootGraphQl/README.md) |
+| FastBootInventory | [The stock id of a website from the cache](src/FastBootInventory/README.md) |
 | FastBootPreload | [Class preloading](src/FastBootPreload/README.md) |
 
 ## Online benchmarks
