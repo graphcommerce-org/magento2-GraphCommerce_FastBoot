@@ -14,7 +14,7 @@ use Magento\Framework\App\CacheInterface;
 use Magento\Framework\DataObject;
 use PHPUnit\Framework\TestCase;
 
-require_once __DIR__ . '/../../_files/customer-group-extension.php';
+require_once __DIR__ . '/../../_files/customer-group-generated.php';
 
 class GroupFromCacheTest extends TestCase
 {

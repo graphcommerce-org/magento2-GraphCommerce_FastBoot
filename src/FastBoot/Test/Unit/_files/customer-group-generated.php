@@ -1,12 +1,12 @@
 <?php
 /**
- * The generated customer group extension classes, for a unit run without Magento's generated code.
+ * The generated customer group classes, for a unit run without Magento's generated code.
  */
 declare(strict_types=1);
 
 namespace Magento\Customer\Api\Data;
 
-if (!interface_exists(GroupExtensionInterface::class, false)) {
+if (!interface_exists(GroupExtensionInterface::class)) {
     interface GroupExtensionInterface extends \Magento\Framework\Api\ExtensionAttributesInterface
     {
         public function getExcludeWebsiteIds();
@@ -24,6 +24,16 @@ if (!interface_exists(GroupExtensionInterface::class, false)) {
         public function setExcludeWebsiteIds($excludeWebsiteIds)
         {
             return $this->setData('exclude_website_ids', $excludeWebsiteIds);
+        }
+    }
+}
+
+if (!class_exists(GroupInterfaceFactory::class)) {
+    class GroupInterfaceFactory
+    {
+        public function create(array $data = []): GroupInterface
+        {
+            throw new \LogicException('The test stubs the factory');
         }
     }
 }
