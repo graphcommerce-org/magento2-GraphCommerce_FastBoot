@@ -7,7 +7,13 @@
                 <item name="scopes" xsi:type="string">FASTBOOT_SCOPES</item>
                 <item name="config_unchanged" xsi:type="string">FASTBOOT_CONFIG_UNCHANGED_</item>
                 <item name="website_stores" xsi:type="string">FASTBOOT_WEBSITE_STORES_</item>
-                <item name="sort_by" xsi:type="string">PRODUCT_LISTING_SORT_BY_ATTRIBUTES</item>
+                <item name="tax_rates" xsi:type="string">FASTBOOT_TAX_RATE_</item>
+                <item name="groups" xsi:type="string">FASTBOOT_GROUP_</item>
+                <item name="currency_rates" xsi:type="string">FASTBOOT_CURRENCY_RATE_</item>
+            </argument>
+            <argument name="tags" xsi:type="array">
+                <item name="tax" xsi:type="const">GraphCommerce\FastBootCache\Model\Tag::TAX</item>
+                <item name="currency" xsi:type="const">GraphCommerce\FastBootCache\Model\Tag::CURRENCY</item>
             </argument>
         </arguments>
     </type>
@@ -52,6 +58,28 @@
     </type>
     <type name="Magento\Store\Model\Group">
         <plugin name="graphcommerce_fastboot_default_store" type="GraphCommerce\FastBoot\Plugin\Store\DefaultStore"/>
+    </type>
+    <!-- The tax rates, the customer groups and the currency rates from the cache instead of their selects per request; a save of the data cleans them. -->
+    <type name="Magento\Tax\Model\ResourceModel\Calculation">
+        <plugin name="graphcommerce_fastboot_tax_rates" type="GraphCommerce\FastBoot\Plugin\Tax\RatesFromCache"/>
+    </type>
+    <type name="Magento\Customer\Api\GroupRepositoryInterface">
+        <plugin name="graphcommerce_fastboot_customer_groups" type="GraphCommerce\FastBoot\Plugin\Customer\GroupFromCache" sortOrder="-10"/>
+    </type>
+    <type name="Magento\Directory\Model\ResourceModel\Currency">
+        <plugin name="graphcommerce_fastboot_currency_rates" type="GraphCommerce\FastBoot\Plugin\Directory\CurrencyRatesFromCache"/>
+    </type>
+    <type name="Magento\Tax\Model\ResourceModel\Calculation\Rate">
+        <plugin name="graphcommerce_fastboot_forget_rates" type="GraphCommerce\FastBoot\Plugin\Tax\ForgetRates"/>
+    </type>
+    <type name="Magento\Tax\Model\ResourceModel\Calculation\Rule">
+        <plugin name="graphcommerce_fastboot_forget_rates" type="GraphCommerce\FastBoot\Plugin\Tax\ForgetRates"/>
+    </type>
+    <type name="Magento\Tax\Model\ResourceModel\TaxClass">
+        <plugin name="graphcommerce_fastboot_forget_rates" type="GraphCommerce\FastBoot\Plugin\Tax\ForgetRates"/>
+    </type>
+    <type name="Magento\Customer\Model\ResourceModel\Group">
+        <plugin name="graphcommerce_fastboot_forget_rates" type="GraphCommerce\FastBoot\Plugin\Tax\ForgetRates"/>
     </type>
 <type name="Magento\Deploy\Model\DeploymentConfig\Hash"><plugin name="graphcommerce_fastboot_deploy_hash_changed" type="GraphCommerce\FastBoot\Plugin\Deploy\ConfigUnchanged"/></type>
 <type name="Magento\Framework\Console\CommandList"><arguments><argument name="commands" xsi:type="array">

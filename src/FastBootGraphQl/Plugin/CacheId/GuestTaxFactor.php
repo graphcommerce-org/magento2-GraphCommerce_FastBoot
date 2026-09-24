@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace GraphCommerce\FastBootGraphQl\Plugin\CacheId;
 
 use GraphCommerce\FastBootCache\Model\Feature;
+use GraphCommerce\FastBootCache\Model\Tag;
 use Magento\CustomerGraphQl\CacheIdFactorProviders\CustomerTaxRateProvider;
 use Magento\Framework\App\Cache\Type\Config as ConfigCache;
 use Magento\Framework\App\CacheInterface;
@@ -21,7 +22,7 @@ class GuestTaxFactor
 {
     private const SWITCH = 'guest_tax_factor';
 
-    public const TAG = 'FASTBOOT_TAX';
+    public const TAG = Tag::TAX;
 
     private const KEY = 'FASTBOOT_TAX_FACTOR_';
 

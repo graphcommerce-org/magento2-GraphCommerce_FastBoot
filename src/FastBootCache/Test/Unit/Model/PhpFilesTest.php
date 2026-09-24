@@ -55,8 +55,8 @@ class PhpFilesTest extends TestCase
         self::assertSame(['old' => true], $b->read('CONFIG', 'a/b'));
         self::assertSame('different', $b->read('CONFIG', 'a_b'));
         $b->sweep();
-        self::assertNull($a->read('CONFIG', 'a/b'));
         self::assertNull($b->read('CONFIG', 'a/b'));
+        self::assertNull($this->files('a')->read('CONFIG', 'a/b'), 'A sweep comes with a version bump, so another process reads under a new path');
     }
     public function testPublicationGenerationAndExpiryAreRespected(): void
     {
@@ -80,5 +80,20 @@ class PhpFilesTest extends TestCase
         self::assertCount(2, glob($f->namespaceDirectory().'/blobs/*.php'));
         $f->write('CONFIG', 'object', new \stdClass());
         self::assertNull($f->read('CONFIG', 'object'));
+    }
+
+    public function testAProcessAnswersAnEntryFromMemoryUntilItExpiresOrIsRemoved(): void
+    {
+        $files = $this->files('v1');
+        $files->write('G', 'kept', ['a' => 1]);
+        $files->write('G', 'brief', ['b' => 2], 1);
+        $this->remove($this->var.'/fastboot');
+        self::assertSame(['a' => 1], $files->read('G', 'kept'), 'The memory of this process answers after the files are gone');
+        self::assertSame(['b' => 2], $files->read('G', 'brief'));
+        usleep(1100000);
+        self::assertNull($files->read('G', 'brief'), 'An expired entry leaves the memory');
+        $files->remove('G', 'kept');
+        self::assertNull($files->read('G', 'kept'));
+        self::assertNull($this->files('v1')->read('G', 'kept'), 'Another process reads the files');
     }
 }
