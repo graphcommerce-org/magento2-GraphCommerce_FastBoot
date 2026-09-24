@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- The configuration values a request read are answered from a request memo on the second read, under the `config_memo` switch: no scope resolution and no type lookup per read.
+
+## Unreleased
+
 - The stock id of the current website as a cache entry in the local files, from the new FastBootInventory module: no sales channel select per request. A change of a stock's sales channels cleans it.
 
 ## 0.2.0-rc8
