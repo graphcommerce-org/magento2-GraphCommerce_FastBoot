@@ -22,6 +22,17 @@
     <preference for="Magento\Framework\Config\View" type="GraphCommerce\FastBoot\Model\Config\OpcacheView"/>
     <preference for="Magento\Framework\Config\ViewFactory" type="GraphCommerce\FastBoot\Model\Config\OpcacheViewFactory"/>
 
+    <!-- The values a request read, by scope, scope code and path: the second read skips the scope resolution and the type lookup. -->
+    <type name="Magento\Framework\App\Config">
+        <plugin name="graphcommerce_fastboot_config_value_memo" type="GraphCommerce\FastBoot\Plugin\Config\ValueMemo"/>
+    </type>
+    <type name="Magento\Framework\App\Config\MutableScopeConfigInterface">
+        <plugin name="graphcommerce_fastboot_forget_config_value_memo" type="GraphCommerce\FastBoot\Plugin\Config\ForgetValueMemo"/>
+    </type>
+    <type name="Magento\Store\Model\StoreManagerInterface">
+        <plugin name="graphcommerce_fastboot_forget_config_value_memo" type="GraphCommerce\FastBoot\Plugin\Config\ForgetValueMemo"/>
+    </type>
+
     <!-- The system configuration of every scope as one opcache PHP array: no decrypt and no unserialise per request. -->
     <type name="Magento\Config\App\Config\Type\System">
         <plugin name="graphcommerce_fastboot_system_from_file" type="GraphCommerce\FastBoot\Plugin\Config\SystemFromFile"/>
