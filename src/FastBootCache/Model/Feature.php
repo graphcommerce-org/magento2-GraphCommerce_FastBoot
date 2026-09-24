@@ -15,7 +15,7 @@ use Magento\Framework\App\DeploymentConfig;
 class Feature
 {
     private ?array $switches = null;
-    private const CACHED = ['schema_array' => true,'cache_files' => true,'system_config_array' => true,'view_config' => true,'parsed_queries' => true,'validated_queries' => true,'scopes_cache' => true,'website_stores' => true,'deploy_config_unchanged' => true,'placeholder_url' => true,'guest_tax_factor' => true,'tax_rates' => true,'customer_groups' => true,'currency_rates' => true];
+    private const CACHED = ['schema_array' => true,'cache_files' => true,'system_config_array' => true,'view_config' => true,'parsed_queries' => true,'validated_queries' => true,'scopes_cache' => true,'website_stores' => true,'deploy_config_unchanged' => true,'placeholder_url' => true,'guest_tax_factor' => true,'tax_rates' => true,'customer_groups' => true,'currency_rates' => true,'stock_id' => true];
 
     public function __construct(
         private readonly DeploymentConfig $deploymentConfig,
