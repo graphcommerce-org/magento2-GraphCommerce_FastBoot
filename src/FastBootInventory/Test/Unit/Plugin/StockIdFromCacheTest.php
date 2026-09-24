@@ -17,6 +17,8 @@ use Magento\Store\Model\StoreManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+require_once __DIR__ . '/../_files/inventory-classes.php';
+
 class StockIdFromCacheTest extends TestCase
 {
     private array $entries = [];
