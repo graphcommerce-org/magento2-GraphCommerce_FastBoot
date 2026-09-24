@@ -5,6 +5,7 @@ namespace GraphCommerce\FastBoot\Plugin\Tax;
 
 use GraphCommerce\FastBootCache\Model\Feature;
 use GraphCommerce\FastBootCache\Model\Tag;
+use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\App\Cache\Type\Config as ConfigCache;
 use Magento\Framework\App\CacheInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -13,7 +14,9 @@ use Magento\Tax\Model\ResourceModel\Calculation;
 /**
  * The tax rate and the applied rates of a rate request from the cache, keyed as core's
  * calculation keys its own per-request memory: store, product and customer tax class,
- * country, region and postcode. A tax rule, rate or class save cleans the entries.
+ * country, region and postcode. A tax rule, rate or class save cleans the entries. A
+ * signed-in customer's request carries the customer's own address, one entry per
+ * address, so it stays with core's per-request memory.
  */
 class RatesFromCache
 {
@@ -24,6 +27,7 @@ class RatesFromCache
         private readonly CacheInterface $cache,
         private readonly Feature $feature,
         private readonly StoreManagerInterface $storeManager,
+        private readonly UserContextInterface $userContext,
     ) {
     }
 
@@ -43,7 +47,7 @@ class RatesFromCache
 
     private function entry(string $kind, $request, callable $compute): array
     {
-        if (!$this->feature->on(self::SWITCH)) {
+        if (!$this->feature->on(self::SWITCH) || (int)$this->userContext->getUserType() === UserContextInterface::USER_TYPE_CUSTOMER) {
             return $compute();
         }
         $key = self::KEY . $kind . '_' . md5(implode('|', [

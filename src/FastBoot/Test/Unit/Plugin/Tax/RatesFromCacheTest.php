@@ -6,6 +6,7 @@ namespace GraphCommerce\FastBoot\Test\Unit\Plugin\Tax;
 use GraphCommerce\FastBoot\Plugin\Tax\RatesFromCache;
 use GraphCommerce\FastBootCache\Model\Feature;
 use GraphCommerce\FastBootCache\Model\Tag;
+use Magento\Authorization\Model\UserContextInterface;
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\DataObject;
 use Magento\Store\Api\Data\StoreInterface;
@@ -19,7 +20,7 @@ class RatesFromCacheTest extends TestCase
     private array $entries = [];
     private array $tags = [];
 
-    private function plugin(bool $on = true): RatesFromCache
+    private function plugin(bool $on = true, int $userType = UserContextInterface::USER_TYPE_GUEST): RatesFromCache
     {
         $cache = $this->createStub(CacheInterface::class);
         $cache->method('load')->willReturnCallback(fn(string $id) => $this->entries[$id] ?? false);
@@ -36,7 +37,10 @@ class RatesFromCacheTest extends TestCase
         $stores = $this->createStub(StoreManagerInterface::class);
         $stores->method('getStore')->willReturn($store);
 
-        return new RatesFromCache($cache, $feature, $stores);
+        $user = $this->createStub(UserContextInterface::class);
+        $user->method('getUserType')->willReturn($userType);
+
+        return new RatesFromCache($cache, $feature, $stores, $user);
     }
 
     private function request(string $country = 'NL', int $productClass = 2): DataObject
@@ -64,7 +68,7 @@ class RatesFromCacheTest extends TestCase
         self::assertSame(2, $calls, 'Another destination is another entry');
     }
 
-    public function testAProcessWithGivenRatesAndAnOffSwitchBypassTheCache(): void
+    public function testGivenRatesAnOffSwitchAndACustomerRequestBypassTheCache(): void
     {
         $subject = $this->createStub(Calculation::class);
         $calls = 0;
@@ -82,5 +86,10 @@ class RatesFromCacheTest extends TestCase
         $off->aroundGetCalculationProcess($subject, $proceed, $this->request());
         $off->aroundGetCalculationProcess($subject, $proceed, $this->request());
         self::assertSame(4, $calls);
+        $customer = $this->plugin(true, UserContextInterface::USER_TYPE_CUSTOMER);
+        $customer->aroundGetRateInfo($subject, $proceed, $this->request());
+        $customer->aroundGetRateInfo($subject, $proceed, $this->request());
+        self::assertSame(6, $calls, 'A customer request keeps its own address out of the entries');
+        self::assertSame([], $this->entries);
     }
 }
