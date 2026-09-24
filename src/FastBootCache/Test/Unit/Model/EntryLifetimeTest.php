@@ -6,6 +6,7 @@ namespace GraphCommerce\FastBootCache\Test\Unit\Model;
 
 use GraphCommerce\FastBootCache\Model\EntryLifetime;
 use Magento\Framework\Cache\Frontend\Adapter\Symfony;
+use Magento\Framework\Cache\Frontend\Decorator\Compression;
 use PHPUnit\Framework\TestCase;
 
 class EntryLifetimeTest extends TestCase
@@ -33,6 +34,28 @@ class EntryLifetimeTest extends TestCase
             $frontend->clean();
         }
     }
+    public function testAnEntryStoredThroughTheCompressionDecoratorIsPromotedWithItsExpiry(): void
+    {
+        if (!class_exists(Symfony::class) || !class_exists(Compression::class)) {
+            self::markTestSkipped('The compression decorator is not present in this Magento version.');
+        }
+        $dir = sys_get_temp_dir().'/fastboot-compressed-'.bin2hex(random_bytes(8));
+        $frontend = new Compression(new Symfony(static fn () => new \Symfony\Component\Cache\Adapter\FilesystemAdapter('lifetime', 7200, $dir)), 8);
+        $reader = new EntryLifetime();
+        $value = str_repeat('translated text ', 64);
+        try {
+            $frontend->save($value, 'big.id', ['TRANSLATE'], 30);
+            self::assertSame($value, $frontend->load('big.id'));
+            $ttl = $reader->remaining($frontend, 'big.id', $value);
+            self::assertIsInt($ttl);
+            self::assertGreaterThan(0, $ttl);
+            self::assertLessThanOrEqual(30, $ttl);
+            self::assertFalse($reader->remaining($frontend, 'big.id', $value.'changed'));
+        } finally {
+            $frontend->clean();
+        }
+    }
+
     public function testLegacyZendFrontendPreservesExpiryAndPermanentEntries(): void
     {
         $dir = sys_get_temp_dir().'/fastboot-zend-'.bin2hex(random_bytes(8));
