@@ -17,7 +17,7 @@ concurrency:
 jobs:
   syntax:
     name: PHP ${{ matrix.php }} syntax
-    runs-on: ubuntu-24.04
+    runs-on: ubicloud-standard-8
     timeout-minutes: 10
     strategy:
       fail-fast: false
@@ -39,7 +39,7 @@ jobs:
 
   integration:
     name: Magento 2.4.8 / PHP ${{ matrix.php }}
-    runs-on: ubuntu-24.04
+    runs-on: ubicloud-standard-8
     timeout-minutes: 25
     strategy:
       fail-fast: false
