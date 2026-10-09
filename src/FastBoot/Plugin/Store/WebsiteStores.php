@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace GraphCommerce\FastBoot\Plugin\Store;
 
 use GraphCommerce\FastBootCache\Model\Feature;
+use Magento\Framework\App\Cache\Type\Config as ConfigCache;
 use Magento\Framework\App\CacheInterface;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Store\Model\Group;
@@ -14,7 +15,9 @@ use Magento\Store\Model\Website;
 /**
  * The stores of a website from the cache: the storeConfig resolver asks for
  * them on every request with a three-table select. The entry follows the
- * store tags, which a store, group or website save cleans.
+ * store tags, which a store, group or website save cleans, and carries the
+ * config type's tag so the store manager's reinit, which cleans the store
+ * tags through the config type, drops it too.
  */
 class WebsiteStores
 {
@@ -49,7 +52,7 @@ class WebsiteStores
         $this->cache->save(
             $this->serializer->serialize($stores),
             $key,
-            [Store::CACHE_TAG, Website::CACHE_TAG, Group::CACHE_TAG]
+            [ConfigCache::CACHE_TAG, Store::CACHE_TAG, Website::CACHE_TAG, Group::CACHE_TAG]
         );
 
         return $stores;

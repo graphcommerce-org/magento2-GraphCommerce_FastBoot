@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- A new website, group or store is in the scopes the same request reads right after it: the scopes and website-stores entries carry the config cache tag, so the store manager's reinit drops them. Before, creating a website from the CLI failed Inventory's sales channel validation ("The website with code … does not exist").
 - The configuration values a request read are answered from a request memo on the second read, under the `config_memo` switch: no scope resolution and no type lookup per read.
 
 ## Unreleased
