@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <!-- The stitched schema from a server-local PHP array, validated against the shared Redis record. -->
+    <!-- The stitched schema as a PHP array in the local files, under the version token of the other local caches. -->
     <virtualType name="Magento\Framework\GraphQl\Config\Data" type="GraphCommerce\FastBootGraphQl\Model\Config\OpcacheData">
         <arguments>
             <argument name="reader" xsi:type="object">Magento\Framework\GraphQlSchemaStitching\Reader</argument>
@@ -45,7 +45,4 @@
     <type name="Magento\CatalogGraphQl\Model\Resolver\Products\DataProvider\Image\Placeholder">
         <plugin name="graphcommerce_fastboot_placeholder_url" type="GraphCommerce\FastBootGraphQl\Plugin\Catalog\PlaceholderUrl"/>
     </type>
-    <type name="Magento\Framework\App\Cache\Type\Config"><plugin name="fastboot_schema_clean" type="GraphCommerce\FastBootGraphQl\Plugin\Schema\Invalidate"/></type>
-    <type name="Magento\Framework\App\Cache"><plugin name="fastboot_schema_flush" type="GraphCommerce\FastBootGraphQl\Plugin\Schema\Flush"/></type>
-    <type name="Magento\Framework\App\Cache\Manager"><plugin name="fastboot_schema_manager_flush" type="GraphCommerce\FastBootGraphQl\Plugin\Schema\Flush"/></type>
 </config>

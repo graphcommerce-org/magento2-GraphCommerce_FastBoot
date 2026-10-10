@@ -18,8 +18,7 @@
         "magento/module-catalog-graph-ql": "^100.4.8",
         "magento/module-tax": "^100.4.8",
         "magento/module-customer": "^103.0.8",
-        "webonyx/graphql-php": "^15.0",
-        "colinmollenhour/credis": "^1.17"
+        "webonyx/graphql-php": "^15.0"
     },
     "replace": {
         "graphcommerce/module-fast-boot-cache": "self.version",

@@ -35,22 +35,14 @@ config['config']['platform'] = {'php': '8.3.0'}
 manifest.write_text(json.dumps(config, indent=4) + '\n')
 (root / 'composer.lock').unlink(missing_ok=True)
 subprocess.run(['composer', 'install', '--no-interaction', '--no-progress', '--no-plugins', '--no-scripts'], cwd=root, check=True)
-# No business DB is needed for units, schema Redis invariants or DI compilation.
+# No business DB is needed for units or DI compilation.
 modules = ['Magento_' + p.name for p in sorted((root / 'app/code/Magento').iterdir()) if (p / 'registration.php').is_file()]
 modules += ['GraphCommerce_' + name for name in ['FastBootCache', 'FastBoot', 'FastBootGraphQl', 'FastBootPreload']]
 (root / 'app/etc/config.php').write_text("<?php\nreturn ['modules' => [\n" + ''.join("    '" + m + "' => 1,\n" for m in modules) + "]];\n")
 (root / 'app/etc/env.php').write_text("""<?php
 return [
     'crypt' => ['key' => 'fastboot-disposable-ci-fixture'],
-    'cache' => ['frontend' => ['default' => [
-        'backend' => 'Magento\\\\Framework\\\\Cache\\\\Backend\\\\Redis',
-        'backend_options' => ['server' => '127.0.0.1', 'port' => 6379, 'database' => 12],
-        'id_prefix' => 'fastboot_ci_',
-    ]]],
     'session' => ['save' => 'files'],
-    'fastboot' => ['schema_l1' => [
-        'enabled' => true, 'installation' => 'fastboot-disposable-ci', 'grace' => 0,
-    ]],
 ];
 """)
 (root/'pub/static').mkdir(parents=True, exist_ok=True)

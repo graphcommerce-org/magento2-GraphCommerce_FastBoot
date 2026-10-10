@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The stitched GraphQL schema is a local PHP array under the version token of the other local caches, on by default with the `schema_array` switch. It needs no configuration and works on every Magento cache backend. The separate Redis transport, its `fastboot.schema_l1` settings and the `colinmollenhour/credis` requirement are removed; a `fastboot.schema_l1` block in `env.php` is not read.
 - A new website, group or store is in the scopes the same request reads right after it: the scopes and website-stores entries carry the config cache tag, so the store manager's reinit drops them. Before, creating a website from the CLI failed Inventory's sales channel validation ("The website with code … does not exist").
 - The configuration values a request read are answered from a request memo on the second read, under the `config_memo` switch: no scope resolution and no type lookup per read.
 

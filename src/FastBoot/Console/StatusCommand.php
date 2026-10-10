@@ -5,20 +5,19 @@ declare(strict_types=1);
 namespace GraphCommerce\FastBoot\Console;
 
 use GraphCommerce\FastBootCache\Model\{Feature,PhpFiles,Release};
-use GraphCommerce\FastBootCache\Model\Schema\Settings;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class StatusCommand extends Command
 {
-    public function __construct(private Feature $feature, private Settings $settings, private PhpFiles $files, private Release $release)
+    public function __construct(private Feature $feature, private PhpFiles $files, private Release $release)
     {
         parent::__construct('fastboot:status');
     }
     protected function configure(): void
     {
-        $this->setDescription('Check FastBoot release configuration, private cache directory and Redis connectivity.');
+        $this->setDescription('Check the FastBoot release identity, the private cache directory and the feature switches.');
     }
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -32,16 +31,6 @@ class StatusCommand extends Command
             $errors[] = 'Cannot create the private FastBoot cache directory.';
         } elseif (!is_writable($directory)) {
             $errors[] = 'FastBoot cache directory is not writable by this CLI user; also check the FPM user.';
-        }
-        if ($this->settings->configuredMode() !== 'native') {
-            try {
-                $this->settings->remote()->metadata();
-                $output->writeln('Schema Redis: reachable');
-            } catch (\Throwable $error) {
-                $errors[] = $error instanceof \InvalidArgumentException ? $error->getMessage() : 'Schema Redis check failed ('.get_class($error).'). Check endpoint, credentials and extension.';
-            }
-        } else {
-            $output->writeln('Schema L1: disabled; configure fastboot.schema_l1 to enable.');
         }
         $output->writeln('Release: '.($release ?: '(missing)'));
         foreach (['schema_array','schema_scalars','cache_files','system_config_array','parsed_queries','validated_queries','area_config_diff','quote_without_connection','deploy_config_unchanged','scopes_cache','website_stores','default_store','view_config','guest_tax_factor','placeholder_url'] as $name) {

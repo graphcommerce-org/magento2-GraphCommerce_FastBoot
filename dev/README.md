@@ -14,7 +14,7 @@ Production installs use the default-enabled optimizations. These switches suppor
 |---|---|---|
 | `cache_files` | Local PHP values for covered Magento configuration caches. | Yes |
 | `system_config_array` | Local system configuration loaded by requested scope. | Yes |
-| `schema_array` | Local GraphQL schema arrays; also requires schema L1 configuration. | Yes |
+| `schema_array` | The stitched GraphQL schema as a local PHP array. | Yes |
 | `schema_scalars` | Faster scalar lookup in the GraphQL schema. | No |
 | `parsed_queries` | Parsed GraphQL document reuse. | Yes |
 | `validated_queries` | Reuse of successful built-in structural validation. | Yes |

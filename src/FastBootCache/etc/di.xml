@@ -4,9 +4,6 @@
     <type name="GraphCommerce\FastBootCache\Model\Feature">
         <arguments><argument name="cacheState" xsi:type="object">Magento\Framework\App\Cache\StateInterface</argument></arguments>
     </type>
-    <type name="GraphCommerce\FastBootCache\Model\Schema\Settings">
-        <arguments><argument name="directories" xsi:type="object">Magento\Framework\App\Filesystem\DirectoryList</argument></arguments>
-    </type>
     <!-- Scope interception to application caches. The plugin-list cache must bootstrap without an interceptor. -->
     <type name="Magento\Framework\App\Cache\Type\Config">
         <plugin name="graphcommerce_fastboot_opcache_layer" type="GraphCommerce\FastBootCache\Plugin\OpcacheLayer"/>

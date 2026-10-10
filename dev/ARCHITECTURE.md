@@ -1,89 +1,74 @@
 # FastBoot implementation notes
 
-FastBoot stores Magento's assembled GraphQL schema in two places:
-
-- **L1:** a private PHP-array file on each server, reused through OPcache.
-- **L2:** the authoritative schema record in Redis, shared by the installation's servers.
-
-The Redis transport uses phpredis when available and Credis otherwise, with identical atomic scripts. The PHP extension is optional.
-
-Servers never share the L1 directory. A server that needs a schema version it does not have reads it from Redis and creates its own local copy. If Redis has no current schema, Magento rebuilds it from the source configuration.
+FastBoot keeps Magento cache entries, and data derived from them, as private PHP-array files on each server, reused through OPcache. Magento's own cache is authoritative and shared by the servers; the local files are copies of it. The stitched GraphQL schema is one of these local caches and uses the same storage, version token and write fence as the others. No FastBoot cache needs a connection of its own: everything goes through Magento's cache API, so any cache backend works.
 
 Customer setup and operating instructions belong in the [module READMEs](../README.md). This document records implementation behavior and constraints for future development.
 
-## A warm read
+## The version token
 
-With `schema_l1.grace=0`, loading the schema follows these steps:
+`FastBootCache/Model/Version` holds a random token in Magento's cache under the `config` tag. Every local index path contains that token, so a new token makes every server stop reading the files of the old one. These operations change the token on every server, because the token lives in the shared cache:
 
-1. Read Redis metadata in one atomic operation: the schema revision, installation invalidation generation and remaining TTL.
-2. Check that the local copy matches that metadata and has not expired.
-3. Include the local PHP array. The schema payload does not need to be downloaded or decoded again.
-
-This Redis check happens when the schema is loaded. Reading individual schema fields or array elements does not trigger another check. Connection establishment can additionally require authentication and database selection; the cost depends on the connection and network.
-
-**Strict freshness means current at the Redis metadata check.** It does not prevent another node invalidating the cache immediately afterward. A request can finish with the schema it already loaded; subsequent schema loads observe the invalidation. Generic FastBoot caches use their own once-per-request generation check.
-
-## A local miss or a cold cache
-
-| State | What happens |
+| Operation | How the token changes |
 |---|---|
-| Local copy is missing or outdated; Redis has a current schema | Fetch and verify the shared payload, then write a local copy. Preserve Redis's remaining TTL. |
-| Redis has no current schema | Capture its generation, build through Magento, then publish only if that generation is still valid. |
-| Several readers miss on the same server | A local lock coalesces promotion and the waiting readers recheck the result. |
-| Several servers miss together | Each server may perform source work. Conditional publication prevents a stale or losing build from replacing a newer result. |
+| A save, remove or clean on a covered cache type (`config`, `eav`, `translate`, `db_ddl`, `reflection`, `collections`) | `Plugin/OpcacheLayer` calls `Version::bump()`. |
+| A clean of the `config` tag in the default frontend, a flush of the cache | The token entry is removed; the next request that finds no token starts a new one. |
+| A direct reset of the GraphQL schema data | `FastBootGraphQl/Plugin/Schema/Reset` bumps before and after the reset. |
 
-The Redis record publishes the payload, content hash, revision, invalidation generation and expiry atomically. If invalidation, eviction, expiry or another publication overtakes a build, the old build cannot repopulate Redis. Its current request may still finish using its own snapshot.
+A request reads the token once and keeps it until the request ends (`ResetAfterRequestInterface`). A positive `grace` (di.xml argument of `Version`) keeps the token in a local stamp file for that many seconds, which trades immediate cross-server freshness for fewer cache reads. The default is zero.
 
-## Invalidation across servers and releases
+## The write fence
 
-FastBoot integrates with Magento's config-cache clean/remove operations, application cache clean, manager flush and direct schema-data reset. The installation has a shared invalidation generation, so a configuration change reaches both old and new release records during a rolling deployment.
+A writer captures the version (`PhpFiles::generation()`) before it reads or computes its data, and passes it to `PhpFiles::write(..., $expectedVersion)`. The write is refused when the current version differs. A clean on any server while a build is in progress thus never leaves the old build's data under the new version. The request that built the data still finishes with it.
 
-Use one installation ID for the shop/environment and Magento's static-content deployment version for each application build. Keep these hooks active on every web, admin and CLI node while any node uses schema L1. Diagnostic bypasses are described in the [developer guide](README.md#feature-switches).
+## The GraphQL schema
 
-Deleting only legacy Magento cache keys through external tooling does not necessarily invalidate FastBoot's schema record. Integrate external writers with the supported cache APIs. A failed invalidation is an error and must be retried; it is not reported as a successful clean.
+`FastBootGraphQl/Model/Config/OpcacheData` is the class behind the `Magento\Framework\GraphQl\Config\Data` virtual type. Magento's own path loads about 1 MB of JSON from the config cache and decodes it on every request. With the `schema_array` switch on and the `config` cache type enabled:
 
-## TTL and grace
+1. Read the array from the local files (group `SCHEMA`, id = the schema cache id). A hit is an include from OPcache; the config cache is not read.
+2. On a miss, capture the version, run Magento's path (the config cache, else the schema reader and a save to the config cache) and write the array under the captured version.
 
-**TTL answers when an entry expires. Invalidation answers whether it became outdated before then.** A TTL alone cannot tell one server that an admin save on another server has changed configuration.
+A save of the schema to the config cache is a save on a covered type, so it changes the version. The request that builds the schema from the reader therefore writes no file; the next request reads the config cache and writes the file. `fastboot:prepare` reads the schema twice for that reason.
 
-The PHP file contains the immutable data. A separate, mutable JSON stamp holds freshness and expiry metadata. This lets an identical rebuilt schema reuse the same compiled PHP file while its expiry changes. Putting the TTL into that immutable file would couple metadata changes to compiled-file changes without solving cross-server invalidation.
+A blob is content-addressed: the same schema under a new version reuses the same PHP file and its compiled OPcache entry; only a small index file is written. The schema blob is subject to `max_entry_bytes` (2 MiB of PHP source by default; a real schema is about 1.1 MiB). A larger schema is a miss on every request and is served by Magento's path.
 
-A positive `schema_l1.grace` allows the server to reuse a recently validated local schema without contacting Redis during that interval. This trades immediate validation for fewer network calls. Entry expiry always wins, even inside the grace interval. The default is zero.
+The schema is written without an expiry: it derives from the code of the release, which is part of the namespace, and from the config cache, whose changes change the version.
+
+## OPcache and memory
+
+Local files contain arrays and scalar values. Their names are based on content hashes, and writes use atomic rename. Identical payloads reuse the same filename; different payloads use new files. This also works with `opcache.validate_timestamps=0` because runtime data is not overwritten at an already compiled path. An index file holds the hash of its blob and the expiry of the entry, so an expiry change does not change the compiled file.
+
+These files are **not preloaded**. PHP class preload is a separate optimization whose definitions remain fixed until the FPM master/service restarts. Cache freshness is decided by the version token and the index expiry, not by OPcache's source-file timestamp validation.
+
+Source size is not compiled-memory usage. Include shared OPcache, worker allocations and the preload master's footprint in capacity planning. Deleting files alone does not reclaim compiled memory; retire cache namespaces with the release/FPM lifecycle.
+
+Whole-object serialization is not used here. It would require reconstructing object graphs in each request; the cache instead stores the reusable data from which Magento operates.
 
 ## Failure behavior
 
 | Failure or limit | Result |
 |---|---|
-| Local file missing or syntactically damaged | Fetch a verified shared copy again. |
-| Local directory cannot be written | Use current authoritative data without saving a local copy. |
-| Local admission limit reached | Use current authoritative data; existing valid local files remain available. |
-| Redis validation fails in strict mode | Propagate the failure. Do not serve the old local schema. |
-| Redis record or invalidation generation is evicted/flushed | Treat the old local copy as a miss when validation resumes. |
-| Invalidation overtakes a schema rebuild | Reject that build's shared-cache publication. |
+| Local file missing or syntactically damaged | Read Magento's cache again and write a new local copy. |
+| Local directory cannot be written | Use Magento's cache without saving a local copy. |
+| Local admission limit reached | Use Magento's cache; existing valid local files remain available. |
+| The cache backend fails to answer the token | The error of Magento's cache propagates; a backend that answers no token gives a new version. Old local files are not served in either case. |
+| The token is evicted or flushed | A new token; the old local files are not read again. |
+| Invalidation overtakes a build | The write of that build is refused. |
+
+Deleting keys in the cache backend outside Magento's cache API does not change the token. Integrate external writers with the supported cache APIs.
 
 The local directory is trusted application storage. Warm reads do not hash the complete PHP file on every include. Keep the directory private and writable only by trusted application users.
 
-## OPcache and memory
-
-Local files contain arrays and scalar values. Their names are based on content hashes, and writes use atomic rename. Identical payloads reuse the same filename; different payloads use new files. This also works with `opcache.validate_timestamps=0` because runtime data is not overwritten at an already compiled path.
-
-These files are **not preloaded**. PHP class preload is a separate optimization whose definitions remain fixed until the FPM master/service restarts. Cache freshness is decided by FastBoot's runtime metadata checks, not by OPcache's source-file timestamp validation.
-
-Schema L1 admits at most 16 files and 32 MiB of PHP source per local namespace by default. Source size is not compiled-memory usage. Include shared OPcache, worker allocations and the preload master's footprint in capacity planning. Deleting files alone does not reclaim compiled memory; retire cache namespaces with the release/FPM lifecycle.
-
-Whole-object serialization is not used here. It would require reconstructing object graphs in each request; the cache instead stores the reusable data from which Magento operates.
-
 ## Deployment identity
 
-`FastBootCache/Model/Release` reads Magento's static-content deployment version once per request. There is no manual FastBoot release override. Missing or empty versions prevent generic cache publication and fail schema setup; area DI differences can fall back to hashing their compiled source files. Local paths follow Magento's configured cache directory.
+`FastBootCache/Model/Release` reads Magento's static-content deployment version once per request. There is no manual FastBoot release override. A missing or empty version prevents local cache writes; area DI differences can fall back to hashing their compiled source files. Local paths follow Magento's configured cache directory.
 
-Generic local namespaces and shared schema keys include this build identity. The shared schema invalidation epoch belongs to the installation, so invalidation reaches both builds during rolling deployment. Preserve this distinction when changing key formats.
+The local namespace includes this build identity, so a new build never reads the files of another. The token is shared by both builds during a rolling deployment, so a clean reaches the files of both.
 
 ## Module responsibilities
 
-- `FastBootCache` owns value-file storage, shared generations, schema transport and invalidation hooks. Both Redis clients must use identical Lua scripts and discard failed sockets without replaying uncertain writes.
-- `FastBoot` owns compiled area DI differences, system/scope configuration and storefront helper optimizations. Capture the generation before deriving values and fence publication afterward.
-- `FastBootGraphQl` owns parsed-document and structural-validation reuse. Never bypass Magento's query processor, custom validation, request limits or scalar coercion. Schema invalidation must retire cached validation proofs.
+- `FastBootCache` owns value-file storage, the version token and the invalidation plugins on the covered cache types.
+- `FastBoot` owns compiled area DI differences, system/scope configuration and storefront helper optimizations. Capture the version before deriving values and fence the write with it.
+- `FastBootGraphQl` owns the schema array, parsed-document and structural-validation reuse. Never bypass Magento's query processor, custom validation, request limits or scalar coercion. Schema invalidation must retire cached validation proofs.
 - `FastBootPreload` records class definitions during a bounded window and loads them at master startup. It never preloads runtime cache values. Recording paths follow Magento's cache directory; the startup entry point remains in the package.
 
 Avoid cache interception on broad bootstrap decorators such as TagScope: compiled plugin-list loading uses those decorators before interceptors can be resolved. Test changes in fresh compiled Magento, including cache-disabled paths and cross-node invalidation.
