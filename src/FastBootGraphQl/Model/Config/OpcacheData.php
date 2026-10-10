@@ -4,60 +4,54 @@ declare(strict_types=1);
 
 namespace GraphCommerce\FastBootGraphQl\Model\Config;
 
-use GraphCommerce\FastBootCache\Model\Schema\{Settings, Metrics};
+use GraphCommerce\FastBootCache\Model\Feature;
+use GraphCommerce\FastBootCache\Model\PhpFiles;
+use Magento\Framework\Config\CacheInterface;
+use Magento\Framework\Config\Data;
+use Magento\Framework\Config\ReaderInterface;
+use Magento\Framework\Serialize\SerializerInterface;
 
-class OpcacheData extends \Magento\Framework\Config\Data
+/**
+ * The stitched GraphQL schema as a PHP array in the local files, under the
+ * version token of the other local caches: a request includes the array from
+ * OPcache where Magento decodes about 1 MB of JSON from the config cache.
+ * A miss captures the version, runs Magento's path (the config cache, else
+ * the reader and a save to the config cache) and writes the array under the
+ * captured version, so a clean on any server during the build refuses the
+ * write. The save of a fresh build changes the version too, so the request
+ * that builds the schema writes no file; the next request reads the config
+ * cache and writes it.
+ */
+class OpcacheData extends Data
 {
-    private \Magento\Framework\Serialize\SerializerInterface $schemaSerializer;
-    private \Magento\Framework\Cache\FrontendInterface $schemaCache;
+    private const SWITCH = 'schema_array';
+    private const GROUP = 'SCHEMA';
+
     public function __construct(
-        \Magento\Framework\Config\ReaderInterface $reader,
-        \Magento\Framework\Config\CacheInterface $cache,
-        $cacheId,
-        private Settings $settings,
-        ?\Magento\Framework\Serialize\SerializerInterface $serializer = null,
+        ReaderInterface $reader,
+        CacheInterface $cache,
+        private readonly string $cacheId,
+        private readonly PhpFiles $files,
+        private readonly Feature $feature,
+        ?SerializerInterface $serializer = null,
         ?array $cacheTags = null,
     ) {
-        $this->schemaSerializer = $serializer ?? new \Magento\Framework\Serialize\Serializer\Json();
-        $this->schemaCache = $settings->mode() === 'native' ? $cache : $settings->frontend($cache);
-        // Parent requires Config CacheInterface. Override initData/reset to use our chosen frontend.
-        $this->_reader = $reader;
-        $this->_cacheId = $cacheId;
-        parent::__construct($reader, $cache, $cacheId, $this->schemaSerializer, $cacheTags);
+        parent::__construct($reader, $cache, $cacheId, $serializer, $cacheTags);
     }
+
     protected function initData()
     {
-        $start = hrtime(true);
-        try {
-            if ($this->settings->mode() === 'native') {
-                parent::initData();
-                return;
-            }
-            $data = $this->settings->local()->load();
-            if ($data === null || $data === false) {
-                $generation = $this->settings->remote()->generation();
-                $data = $this->_reader->read();
-                if (!$this->settings->remote()->publish(json_encode($data, JSON_THROW_ON_ERROR), $this->cacheTags, 7200, $generation)) {
-                    Metrics::add('rejected_publications');
-                }
-
-            }
-            $this->merge($data);
-        } finally {
-            Metrics::add('schema_ms', (hrtime(true) - $start) / 1e6);
-        }
-    }
-    public function reset()
-    {
-        if ($this->settings->mode() === 'native') {
-            parent::reset();
+        if (!$this->feature->on(self::SWITCH)) {
+            parent::initData();
             return;
         }
-        $this->schemaCache->remove($this->_cacheId);
-        $this->_data = [];
-        $data = $this->_reader->read();
-        if ($data) {
+        $data = $this->files->read(self::GROUP, $this->cacheId);
+        if (is_array($data)) {
             $this->merge($data);
+            return;
         }
+        $version = $this->files->generation();
+        parent::initData();
+        $this->files->write(self::GROUP, $this->cacheId, $this->_data, null, $version);
     }
 }

@@ -30,7 +30,6 @@ Median PHP execution time on a deployed AMD EPYC server, with 600 measured reque
 
 - Magento 2.4.8 or compatible Mage-OS APIs.
 - PHP 8.2–8.5, subject to the installed Magento version.
-- A writable Redis primary for schema L1.
 - Private, node-local cache storage.
 
 Release candidate.

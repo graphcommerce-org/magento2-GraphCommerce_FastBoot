@@ -51,7 +51,6 @@ foreach ($config['cache']['frontend'] as &$frontend) {
     $frontend['id_prefix'] = ''' + quote('fbonline_' + run_id + '_' + mode + '_') + ''';
 }
 unset($frontend);
-$config['fastboot']['schema_l1']['installation'] .= ''' + quote(':benchmark:' + run_id + ':' + mode) + ''';
 return $config;
 ''')
     if mode == 'native':

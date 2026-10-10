@@ -16,8 +16,5 @@
         "psr-4": {
             "GraphCommerce\\FastBootCache\\": ""
         }
-    },
-    "suggest": {
-        "ext-redis": "Required when the optional schema_l1 Redis transport is enabled"
     }
 }

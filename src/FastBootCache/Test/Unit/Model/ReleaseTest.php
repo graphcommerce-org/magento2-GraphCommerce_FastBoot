@@ -4,32 +4,26 @@ declare(strict_types=1);
 
 namespace GraphCommerce\FastBootCache\Test\Unit\Model;
 
-use GraphCommerce\FastBootCache\Model\{Release,PhpFiles,Version,Feature};
-use GraphCommerce\FastBootCache\Model\Schema\Settings;
-use Magento\Framework\App\{DeploymentConfig,Cache\StateInterface,Filesystem\DirectoryList};
+use GraphCommerce\FastBootCache\Model\{Release,PhpFiles,Version};
+use Magento\Framework\App\{DeploymentConfig,Filesystem\DirectoryList};
 use Magento\Framework\Filesystem;
 use PHPUnit\Framework\TestCase;
 
 class ReleaseTest extends TestCase
 {
-    public function testDeploymentChangesIsolateLocalAndSharedDataWithoutAnExplicitId(): void
+    public function testDeploymentChangesIsolateLocalDataWithoutAnExplicitId(): void
     {
         $root = sys_get_temp_dir().'/fastboot-release-'.bin2hex(random_bytes(8));
         mkdir($root.'/static', 0700, true);
         $config = $this->createStub(DeploymentConfig::class);
         $config->method('get')->willReturnCallback(static fn ($key, $default = null) => match ($key) {
             'fastboot/release' => 'ignored-legacy-build',
-            'fastboot/schema_l1' => ['enabled' => true, 'installation' => 'release-test', 'release' => 'ignored-schema-build'],
             'cache/frontend/default' => ['backend_options' => ['server' => '127.0.0.1']],
             default => $default,
         });
         $dirs = new DirectoryList($root, [DirectoryList::STATIC_VIEW => ['path' => $root.'/static'], DirectoryList::CACHE => ['path' => $root.'/private-cache']]);
         $version = $this->createStub(Version::class);
         $version->method('current')->willReturn('unchanged-cache-generation');
-        $state = $this->createStub(StateInterface::class);
-        $state->method('isEnabled')->willReturn(true);
-        $feature = $this->createStub(Feature::class);
-        $feature->method('on')->willReturn(true);
         $read = $this->createStub(\Magento\Framework\Filesystem\Directory\ReadInterface::class);
         $read->method('getAbsolutePath')->willReturn($root.'/private-cache/');
         $fs = $this->createStub(Filesystem::class);
@@ -38,7 +32,6 @@ class ReleaseTest extends TestCase
             return $read;
         });
         $files = fn ($release) => new PhpFiles($fs, $version, $config, $release);
-        $settings = fn ($release) => new Settings($config, $state, $feature, $dirs, $release);
         try {
             $missing = new Release($dirs);
             self::assertNull($missing->id());
@@ -55,14 +48,7 @@ class ReleaseTest extends TestCase
             self::assertSame('build-one', $first->id()); // In-flight request keeps its build snapshot.
             self::assertSame('build-two', $second->id());
             self::assertNull($files($second)->read('CONFIG', 'example'));
-            $options = new \ReflectionProperty(\GraphCommerce\FastBootCache\Model\Schema\Remote::class, 'options');
-            $firstSettings = $settings($first);
-            $directory = new \ReflectionProperty(\GraphCommerce\FastBootCache\Model\Schema\Local::class, 'directory');
-            self::assertStringStartsWith($root.'/private-cache/fastboot/schema/', $directory->getValue($firstSettings->local()));
-            $a = $options->getValue($firstSettings->remote());
-            $b = $options->getValue($settings($second)->remote());
-            self::assertNotSame($a['key'], $b['key']);
-            self::assertSame($a['epoch_key'], $b['epoch_key']);
+            self::assertNotSame($files($first)->namespaceDirectory(), $files($second)->namespaceDirectory());
         } finally {
             $iterator = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root, \FilesystemIterator::SKIP_DOTS), \RecursiveIteratorIterator::CHILD_FIRST);
             foreach ($iterator as $file) {

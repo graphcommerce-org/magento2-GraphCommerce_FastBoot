@@ -24,30 +24,6 @@ php "$MAGENTO_ROOT/vendor/bin/phpunit" -c phpunit.xml.dist
 
 The Symfony cache-adapter and newer parser-policy fixtures skip on Magento 2.4.8 where those APIs are absent. The older Zend backend's expiry behavior is tested directly.
 
-## Redis integration tests
-
-With the same `MAGENTO_ROOT`, run from the package root:
-
-```sh
-php dev/tests/schema-l1/tests.php
-php dev/tests/schema-l1/edge-cases.php
-python3 dev/tests/schema-l1/concurrency.py
-python3 dev/tests/schema-l1/redis-failure.py
-```
-
-The first three commands require local Redis at port 6379, database 12. They use unique test keys and delete only their own keys; they do not flush the database or change Magento business data. Local fixture directories remain under the selected installation's `var` directory.
-
-The failure test requires Python, Docker and the `valkey/valkey:8-alpine` image. It creates its own loopback-only container, pauses/restarts only that container, and removes it afterward. See the [schema test guide](schema-l1/README.md) for coverage.
-
-Run a test command with the Redis extension disabled, without changing system PHP configuration:
-
-```sh
-python3 dev/tests/without-redis.py -- php dev/tests/schema-l1/tests.php
-python3 dev/tests/without-redis.py -- python3 dev/tests/schema-l1/redis-failure.py
-```
-
-The wrapper also disables the extension for child PHP processes. CI repeats units, schema invariants, concurrency, failure and package installation checks through this path.
-
 ## Build a release artifact
 
 Run from the package repository root:
@@ -71,4 +47,4 @@ This check verifies hashes, resolves the package with Composer against the exist
 
 ## Application checks
 
-Units and portable Redis tests do not replace an application run. Exercise representative GraphQL operations, admin configuration saves, stores, customer sessions, tax, cross-node invalidation and rollback using the customer's extensions. Use a dedicated FPM service for comparisons and inspect both cold and warm memory.
+Unit tests do not replace an application run. Exercise representative GraphQL operations, admin configuration saves, stores, customer sessions, tax, cross-node invalidation and rollback using the customer's extensions. Use a dedicated FPM service for comparisons and inspect both cold and warm memory.
