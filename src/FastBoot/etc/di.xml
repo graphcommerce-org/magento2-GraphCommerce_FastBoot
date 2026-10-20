@@ -10,6 +10,7 @@
                 <item name="tax_rates" xsi:type="string">FASTBOOT_TAX_RATE_</item>
                 <item name="groups" xsi:type="string">FASTBOOT_GROUP_</item>
                 <item name="currency_rates" xsi:type="string">FASTBOOT_CURRENCY_RATE_</item>
+                <item name="directory_data" xsi:type="string">FASTBOOT_DIRECTORY_DATA_</item>
             </argument>
             <argument name="tags" xsi:type="array">
                 <item name="tax" xsi:type="const">GraphCommerce\FastBootCache\Model\Tag::TAX</item>
@@ -79,6 +80,9 @@
     </type>
     <type name="Magento\Directory\Model\ResourceModel\Currency">
         <plugin name="graphcommerce_fastboot_currency_rates" type="GraphCommerce\FastBoot\Plugin\Directory\CurrencyRatesFromCache"/>
+    </type>
+    <type name="Magento\Checkout\CustomerData\DirectoryData">
+        <plugin name="graphcommerce_fastboot_directory_data" type="GraphCommerce\FastBoot\Plugin\Directory\DirectoryDataFromCache"/>
     </type>
     <type name="Magento\Tax\Model\ResourceModel\Calculation\Rate">
         <plugin name="graphcommerce_fastboot_forget_rates" type="GraphCommerce\FastBoot\Plugin\Tax\ForgetRates"/>

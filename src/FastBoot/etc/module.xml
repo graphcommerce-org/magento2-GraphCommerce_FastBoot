@@ -10,6 +10,7 @@
             <module name="Magento_Authorization"/>
             <module name="Magento_Customer"/>
             <module name="Magento_Directory"/>
+            <module name="Magento_Checkout"/>
         </sequence>
     </module>
 </config>
